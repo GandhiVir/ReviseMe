@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "ReviseMe",
+    "slug": "reviseme-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.reviseme",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ReviseMe uses the camera to scan photos of your handwritten notes.",
+        "NSPhotoLibraryUsageDescription": "ReviseMe lets you pick a photo of your notes to scan.",
+        "NSMicrophoneUsageDescription": "ReviseMe uses the microphone to record voice notes.",
+        "NSSpeechRecognitionUsageDescription": "ReviseMe transcribes your voice notes on-device."
+      }
+    },
+    "android": {
+      "package": "com.yourname.reviseme",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-document-picker",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ReviseMe uses the camera to scan photos of your handwritten notes.",
+          "photosPermission": "ReviseMe lets you pick a photo of your notes to scan."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "ReviseMe uses the microphone to record voice notes.",
+          "speechRecognitionPermission": "ReviseMe transcribes your voice notes on-device."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "62b3748e-72e4-4d48-8ebb-b1c2741139fc"
+      }
+    }
+  }
+}
