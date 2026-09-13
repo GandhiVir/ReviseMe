@@ -27,6 +27,37 @@ interface ExtractTextRequest {
   mimeType: string; // e.g. "image/jpeg" or "application/pdf"
 }
 
+const VOCAB_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    vocabulary: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          original: { type: "STRING" },
+          pronunciation: { type: "STRING" },
+          translation: { type: "STRING" },
+        },
+        required: ["original", "pronunciation", "translation"],
+      },
+    },
+  },
+  required: ["vocabulary"],
+};
+
+const VOCAB_EXTRACTION_PROMPT = `You are helping a language learner build a vocabulary list from their notes.
+Look at this file and identify ONLY the vocabulary words or short phrases being studied — skip dates,
+page numbers, headers, and any surrounding sentences that aren't themselves vocabulary items.
+
+For each vocabulary term, provide:
+- "original": the term exactly as written (if handwritten, do your best to read the handwriting)
+- "pronunciation": a romanized pronunciation guide (e.g. Pinyin for Chinese, Romaji for Japanese,
+  Revised Romanization for Korean; for already-Latin-script languages, a phonetic respelling)
+- "translation": the English meaning
+
+Return an empty list if the file contains no vocabulary terms to extract.`;
+
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -143,14 +174,13 @@ async function handleExtractText(request: Request, env: Env): Promise<Response> 
   const geminiBody = {
     contents: [
       {
-        parts: [
-          { inlineData: { mimeType: payload.mimeType, data: payload.data } },
-          {
-            text: "Transcribe all text from this file exactly as written, preserving paragraph breaks. If it's handwritten, do your best to read the handwriting. Do not add commentary, translation, or summary — output only the transcribed text.",
-          },
-        ],
+        parts: [{ inlineData: { mimeType: payload.mimeType, data: payload.data } }, { text: VOCAB_EXTRACTION_PROMPT }],
       },
     ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: VOCAB_RESPONSE_SCHEMA,
+    },
   };
 
   const geminiResponse = await callGeminiWithRetry(env.GEMINI_API_KEY, geminiBody);
@@ -164,7 +194,13 @@ async function handleExtractText(request: Request, env: Env): Promise<Response> 
   }
 
   const geminiJson: any = await geminiResponse.json();
-  const text = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  const parsed = rawText
+    ? (JSON.parse(rawText) as { vocabulary: { original: string; pronunciation: string; translation: string }[] })
+    : { vocabulary: [] };
+
+  const text = parsed.vocabulary.map((v) => `${v.original} : ${v.pronunciation} : ${v.translation}`).join("\n");
 
   return new Response(JSON.stringify({ text }), {
     headers: { "Content-Type": "application/json", ...corsHeaders() },

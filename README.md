@@ -14,8 +14,8 @@ Gemini's free tier via the Worker proxy:
 | Storage (notes, chunks, mastery) | On-device | SQLite (`expo-sqlite`) |
 | Embeddings | Cloud, free tier | `gemini-embedding-001`, called through the Worker's `/embed` endpoint, see `src/embeddings/embed.ts` |
 | Retrieval | On-device | Brute-force cosine similarity over locally stored vectors |
-| OCR (photographed notes) | Cloud, free tier, on-device fallback | Gemini vision (handles handwriting + non-Latin scripts) via the Worker's `/extract-text`; falls back to on-device ML Kit (Latin print only) if Gemini is rate-limited or unreachable, see `src/ocr` |
-| PDF import | Cloud, free tier | Gemini reads the PDF directly via `/extract-text` (no on-device fallback — ML Kit only handles images) |
+| OCR (photographed notes) | Cloud, free tier, on-device fallback | Gemini vision extracts only vocabulary terms (skipping unrelated text) as `original : pronunciation : translation`, via the Worker's `/extract-text`; falls back to on-device ML Kit (raw Latin-script transcription only, no vocab filtering/pronunciation/translation) if Gemini is rate-limited or unreachable, see `src/ocr` |
+| PDF import | Cloud, free tier | Same vocabulary extraction as photo OCR, but reads the PDF directly via `/extract-text` (no on-device fallback — ML Kit only handles images) |
 | Voice notes | On-device | Platform speech recognition via `expo-speech-recognition`, see `src/voice` |
 | Spaced repetition scheduling | On-device | SM-2 algorithm, `src/spacedRepetition/sm2.ts` |
 | Quiz generation | Cloud, free tier | `gemini-3.6-flash`, called through the Worker's `/generate-quiz` endpoint |

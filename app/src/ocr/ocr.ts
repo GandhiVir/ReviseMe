@@ -1,16 +1,18 @@
 import TextRecognition from "@react-native-ml-kit/text-recognition";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { extractTextFromFile, ProxyRequestError } from "../gemini/client";
 
 /**
- * Reads text out of an image. Tries Gemini's vision understanding first
- * (handles handwriting and non-Latin scripts, which on-device ML Kit
- * cannot); if that request is rate-limited (free-tier 429), falls back to
- * on-device ML Kit OCR (Latin-script printed text only, but free and
- * unlimited). Any other failure (network down, etc.) also falls back,
- * since a stale/wrong recognition beats none.
+ * Extracts vocabulary from an image: Gemini identifies vocabulary terms
+ * (skipping dates, headers, unrelated sentences) and returns each as
+ * "original : pronunciation : translation" — handles handwriting and
+ * non-Latin scripts, which on-device ML Kit cannot. If that request is
+ * rate-limited (free-tier 429) or otherwise fails, falls back to on-device
+ * ML Kit OCR — but ML Kit only does raw Latin-script transcription, with no
+ * vocab filtering, pronunciation, or translation, so the fallback result
+ * looks different (and won't help with non-Latin scripts at all).
  */
 export async function recognizeTextFromImage(imageUri: string, mimeType: string): Promise<string> {
   try {
@@ -55,10 +57,11 @@ export async function captureAndRecognizeText(source: "camera" | "library"): Pro
 }
 
 /**
- * Prompts the user to pick a PDF, then sends it to Gemini for text
- * extraction — Gemini reads PDFs natively (including scanned/handwritten
- * pages), so there's no on-device fallback here; ML Kit only handles
- * images. Returns null if the user cancels.
+ * Prompts the user to pick a PDF, then sends it to Gemini for vocabulary
+ * extraction (same "original : pronunciation : translation" format as
+ * recognizeTextFromImage) — Gemini reads PDFs natively (including
+ * scanned/handwritten pages), so there's no on-device fallback here; ML Kit
+ * only handles images. Returns null if the user cancels.
  */
 export async function pickAndExtractPdfText(): Promise<string | null> {
   const result = await DocumentPicker.getDocumentAsync({ type: "application/pdf" });

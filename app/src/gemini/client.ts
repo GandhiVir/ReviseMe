@@ -88,10 +88,13 @@ interface ExtractTextResponse {
 }
 
 /**
- * Sends an image or PDF (base64-encoded) to Gemini's vision/document
- * understanding, which handles handwriting and non-Latin scripts far better
- * than on-device OCR. Callers should catch ProxyRequestError with
- * status === 429 and fall back to on-device ML Kit OCR when it's an image.
+ * Sends an image or PDF (base64-encoded) to Gemini, which extracts only
+ * the vocabulary terms it finds (skipping unrelated text) and returns each
+ * as one line: "original : pronunciation : translation". Handles
+ * handwriting and non-Latin scripts far better than on-device OCR.
+ * Callers should catch ProxyRequestError with status === 429 and fall back
+ * to on-device ML Kit OCR when it's an image (note: that fallback can only
+ * do raw transcription, not vocab extraction or translation).
  */
 export async function extractTextFromFile(base64Data: string, mimeType: string): Promise<string> {
   if (!PROXY_URL) {
