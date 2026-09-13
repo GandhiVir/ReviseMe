@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, TextInput, View, StyleSheet } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { ingestWeeklyNote } from "../ingestion/ingest";
 import { captureAndRecognizeText, pickAndExtractPdfText } from "../ocr/ocr";
 import { startListening, stopListening } from "../voice/voice";
 import type { SourceType } from "../types";
 import type { RootStackParamList } from "../navigation";
+import { colors, gradients, radius, shadow, spacing } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NoteEntry">;
 
@@ -99,70 +102,139 @@ export default function NoteEntryScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Week number</Text>
-      <TextInput style={styles.input} keyboardType="number-pad" value={weekNumber} onChangeText={setWeekNumber} />
-
-      <Text style={styles.label}>Topic (e.g. "verb conjugation")</Text>
-      <TextInput style={styles.input} value={topic} onChangeText={setTopic} />
-
-      <Text style={styles.label}>Notes</Text>
-      <TextInput
-        style={[styles.input, styles.multiline]}
-        multiline
-        value={rawText}
-        onChangeText={(text) => {
-          setRawText(text);
-          setSourceType("typed");
-        }}
-        placeholder="Type, scan a photo, upload a PDF, or record a voice note..."
-      />
-
-      <View style={styles.captureRow}>
-        <Pressable style={styles.captureButton} onPress={() => handleScan("camera")} disabled={scanning}>
-          {scanning ? <ActivityIndicator color="#2563eb" /> : <Text style={styles.captureButtonText}>📷 Scan photo</Text>}
-        </Pressable>
-        <Pressable
-          style={[styles.captureButton, recording && styles.captureButtonActive]}
-          onPress={handleToggleRecording}
-        >
-          <Text style={[styles.captureButtonText, recording && styles.captureButtonTextActive]}>
-            {recording ? "⏹ Stop recording" : "🎤 Record voice"}
-          </Text>
-        </Pressable>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={[styles.card, shadow.card]}>
+        <View style={styles.row}>
+          <View style={styles.weekField}>
+            <Text style={styles.label}>Week</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              value={weekNumber}
+              onChangeText={setWeekNumber}
+            />
+          </View>
+          <View style={styles.topicField}>
+            <Text style={styles.label}>Topic</Text>
+            <TextInput
+              style={styles.input}
+              value={topic}
+              onChangeText={setTopic}
+              placeholder="e.g. verb conjugation"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+        </View>
       </View>
 
-      <View style={styles.captureRow}>
-        <Pressable style={styles.captureButton} onPress={handleUploadPdf} disabled={uploadingPdf}>
-          {uploadingPdf ? <ActivityIndicator color="#2563eb" /> : <Text style={styles.captureButtonText}>📄 Upload PDF</Text>}
-        </Pressable>
+      <View style={[styles.card, shadow.card]}>
+        <Text style={styles.label}>Notes</Text>
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          multiline
+          value={rawText}
+          onChangeText={(text) => {
+            setRawText(text);
+            setSourceType("typed");
+          }}
+          placeholder="Type, scan a photo, upload a PDF, or record a voice note..."
+          placeholderTextColor={colors.textMuted}
+        />
       </View>
 
-      <Pressable style={styles.saveButton} onPress={handleSave} disabled={saving}>
-        <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save note"}</Text>
+      <View style={[styles.card, shadow.card]}>
+        <Text style={styles.cardTitle}>Capture</Text>
+        <View style={styles.captureRow}>
+          <Pressable style={styles.captureButton} onPress={() => handleScan("camera")} disabled={scanning}>
+            {scanning ? (
+              <ActivityIndicator color={colors.primaryDark} />
+            ) : (
+              <>
+                <Ionicons name="camera" size={22} color={colors.primaryDark} />
+                <Text style={styles.captureButtonText}>Scan photo</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable style={styles.captureButton} onPress={handleUploadPdf} disabled={uploadingPdf}>
+            {uploadingPdf ? (
+              <ActivityIndicator color={colors.primaryDark} />
+            ) : (
+              <>
+                <Ionicons name="document-text" size={22} color={colors.primaryDark} />
+                <Text style={styles.captureButtonText}>Upload PDF</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable
+            style={[styles.captureButton, recording && styles.captureButtonActive]}
+            onPress={handleToggleRecording}
+          >
+            <Ionicons
+              name={recording ? "stop-circle" : "mic"}
+              size={22}
+              color={recording ? colors.white : colors.primaryDark}
+            />
+            <Text style={[styles.captureButtonText, recording && styles.captureButtonTextActive]}>
+              {recording ? "Stop" : "Record"}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <Pressable onPress={handleSave} disabled={saving} style={shadow.button}>
+        <LinearGradient colors={gradients.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.saveButton}>
+          {saving ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle" size={20} color={colors.white} />
+              <Text style={styles.saveButtonText}>Save note</Text>
+            </>
+          )}
+        </LinearGradient>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  label: { fontWeight: "600", marginTop: 12, marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10 },
-  multiline: { height: 180, textAlignVertical: "top" },
-  captureRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg },
+  cardTitle: { fontSize: 14, fontWeight: "700", color: colors.text, marginBottom: spacing.md },
+  row: { flexDirection: "row", gap: spacing.md },
+  weekField: { width: 80 },
+  topicField: { flex: 1 },
+  label: { fontWeight: "600", color: colors.textMuted, marginBottom: spacing.xs, fontSize: 13 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    color: colors.text,
+    fontSize: 15,
+  },
+  multiline: { height: 160, textAlignVertical: "top", marginTop: spacing.xs },
+  captureRow: { flexDirection: "row", gap: spacing.sm },
   captureButton: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#2563eb",
-    borderRadius: 8,
-    padding: 12,
+    gap: spacing.xs,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
     alignItems: "center",
     justifyContent: "center",
   },
-  captureButtonActive: { backgroundColor: "#dc2626", borderColor: "#dc2626" },
-  captureButtonText: { color: "#2563eb", fontWeight: "600" },
-  captureButtonTextActive: { color: "white" },
-  saveButton: { backgroundColor: "#2563eb", borderRadius: 8, padding: 14, marginTop: 20, alignItems: "center" },
-  saveButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
+  captureButtonActive: { backgroundColor: colors.danger },
+  captureButtonText: { color: colors.primaryDark, fontWeight: "600", fontSize: 12 },
+  captureButtonTextActive: { color: colors.white },
+  saveButton: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButtonText: { color: colors.white, fontWeight: "700", fontSize: 16 },
 });
