@@ -14,7 +14,7 @@ Gemini's free tier via the Worker proxy:
 | Storage (notes, chunks, mastery) | On-device | SQLite (`expo-sqlite`) |
 | Embeddings | Cloud, free tier | `gemini-embedding-001`, called through the Worker's `/embed` endpoint, see `src/embeddings/embed.ts` |
 | Retrieval | On-device | Brute-force cosine similarity over locally stored vectors |
-| OCR (photographed notes) | Cloud, free tier, on-device fallback | Gemini vision extracts only vocabulary terms (skipping unrelated text) as `original : pronunciation : translation`, via the Worker's `/extract-text`; falls back to on-device ML Kit (raw Latin-script transcription only, no vocab filtering/pronunciation/translation) if Gemini is rate-limited or unreachable, see `src/ocr` |
+| OCR (photographed notes) | Cloud, free tier, cloud + on-device fallback | Gemini vision extracts only vocabulary terms (skipping unrelated text) as `original : pronunciation : translation`, via the Worker's `/extract-text`; if Gemini fails (rate-limited, or overloaded — a real, semi-frequent 503), the Worker retries via Groq's free-tier vision model (`qwen/qwen3.8-27b`) before the client ever sees a failure; only if *both* fail does the app fall back to on-device ML Kit (raw Latin-script transcription only, no vocab filtering/pronunciation/translation), see `src/ocr` |
 | PDF import | Cloud, free tier | Same vocabulary extraction as photo OCR, but reads the PDF directly via `/extract-text` (no on-device fallback — ML Kit only handles images) |
 | Voice notes | On-device | Platform speech recognition via `expo-speech-recognition`, see `src/voice` |
 | Spaced repetition scheduling | On-device | SM-2 algorithm, `src/spacedRepetition/sm2.ts` |
@@ -53,6 +53,16 @@ npm run deploy
 ```
 
 Copy the deployed Worker URL into `app/.env` (see below).
+
+Optional: `npx wrangler secret put GROQ_API_KEY` (free signup at
+[console.groq.com](https://console.groq.com), no card required) enables a
+second-chance OCR backup — if Gemini fails, the Worker retries via Groq
+before falling all the way back to on-device ML Kit. Skip this and OCR still
+works fine, just with one fewer fallback layer. When pasting the key into
+the `wrangler secret put` prompt, paste-then-Enter cleanly — a stray extra
+keystroke can corrupt the stored secret into something a few characters
+long that silently fails every Groq call (this happened once during
+development; the fix was just re-running the command).
 
 ### 2. App
 

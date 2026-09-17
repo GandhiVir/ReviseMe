@@ -1,5 +1,6 @@
 export interface Env {
   GEMINI_API_KEY: string;
+  GROQ_API_KEY?: string;
 }
 
 interface NoteInput {
@@ -17,6 +18,14 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:batchEmbedContents`;
+
+// Backup for OCR only, when Gemini is down/overloaded/rate-limited — free-tier
+// vision-capable model on Groq. Images only (no PDF support), tried before
+// falling all the way back to on-device ML Kit, which can't read handwriting
+// or non-Latin scripts at all. Optional: GROQ_API_KEY may not be configured,
+// in which case this backup is simply skipped.
+const GROQ_MODEL = "qwen/qwen3.8-27b";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 interface EmbedRequest {
   texts: string[];
@@ -133,6 +142,54 @@ async function callGeminiWithRetry(
   return lastResponse!;
 }
 
+type VocabEntry = { original: string; pronunciation: string; translation: string };
+
+function formatVocab(vocabulary: VocabEntry[]): string {
+  return vocabulary.map((v) => `${v.original} : ${v.pronunciation} : ${v.translation}`).join("\n");
+}
+
+/**
+ * Backup vocabulary extraction via Groq's free-tier vision model, used only
+ * when Gemini fails and only for images (Groq's chat-completions API takes
+ * an image_url, not a PDF). Returns null on any failure — including a
+ * missing GROQ_API_KEY — so the caller can fall through to its next option
+ * without needing to inspect the error.
+ */
+async function extractVocabularyViaGroq(apiKey: string | undefined, base64Data: string, mimeType: string): Promise<string | null> {
+  if (!apiKey || !mimeType.startsWith("image/")) return null;
+
+  try {
+    const response = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: `${VOCAB_EXTRACTION_PROMPT}\n\nRespond with JSON only, shaped exactly like: {"vocabulary": [{"original": "...", "pronunciation": "...", "translation": "..."}]}` },
+              { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Data}` } },
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const json: any = await response.json();
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    const parsed = JSON.parse(content) as { vocabulary: VocabEntry[] };
+    return formatVocab(parsed.vocabulary ?? []);
+  } catch {
+    return null;
+  }
+}
+
 function corsHeaders(): HeadersInit {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -207,8 +264,16 @@ async function handleExtractText(request: Request, env: Env): Promise<Response> 
   const geminiResponse = await callGeminiWithRetry(env.GEMINI_API_KEY, geminiBody);
 
   if (!geminiResponse.ok) {
-    const errText = await geminiResponse.text();
-    return new Response(`Gemini text extraction failed: ${errText}`, {
+    const geminiErrText = await geminiResponse.text();
+
+    const groqText = await extractVocabularyViaGroq(env.GROQ_API_KEY, payload.data, payload.mimeType);
+    if (groqText !== null) {
+      return new Response(JSON.stringify({ text: groqText }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders() },
+      });
+    }
+
+    return new Response(`Gemini text extraction failed: ${geminiErrText}`, {
       status: geminiResponse.status,
       headers: corsHeaders(),
     });
@@ -216,14 +281,9 @@ async function handleExtractText(request: Request, env: Env): Promise<Response> 
 
   const geminiJson: any = await geminiResponse.json();
   const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  const parsed = rawText ? (JSON.parse(rawText) as { vocabulary: VocabEntry[] }) : { vocabulary: [] };
 
-  const parsed = rawText
-    ? (JSON.parse(rawText) as { vocabulary: { original: string; pronunciation: string; translation: string }[] })
-    : { vocabulary: [] };
-
-  const text = parsed.vocabulary.map((v) => `${v.original} : ${v.pronunciation} : ${v.translation}`).join("\n");
-
-  return new Response(JSON.stringify({ text }), {
+  return new Response(JSON.stringify({ text: formatVocab(parsed.vocabulary) }), {
     headers: { "Content-Type": "application/json", ...corsHeaders() },
   });
 }
