@@ -151,7 +151,17 @@ export default function NoteEntryScreen({ route, navigation }: Props) {
             ) : (
               <>
                 <Ionicons name="camera" size={22} color={colors.primaryDark} />
-                <Text style={styles.captureButtonText}>Scan photo</Text>
+                <Text style={styles.captureButtonText}>Take photo</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable style={styles.captureButton} onPress={() => handleScan("library")} disabled={scanning}>
+            {scanning ? (
+              <ActivityIndicator color={colors.primaryDark} />
+            ) : (
+              <>
+                <Ionicons name="image" size={22} color={colors.primaryDark} />
+                <Text style={styles.captureButtonText}>Upload photo</Text>
               </>
             )}
           </Pressable>
@@ -215,9 +225,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   multiline: { height: 160, textAlignVertical: "top", marginTop: spacing.xs },
-  captureRow: { flexDirection: "row", gap: spacing.sm },
+  captureRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   captureButton: {
-    flex: 1,
+    flexBasis: "47%",
+    flexGrow: 1,
     gap: spacing.xs,
     backgroundColor: colors.primarySoft,
     borderRadius: radius.md,

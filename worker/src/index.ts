@@ -77,12 +77,33 @@ const RESPONSE_SCHEMA = {
   required: ["questions"],
 };
 
+// A vocab-extracted note's lines look like "original : pronunciation : translation" —
+// count those to size the quiz around how many *facts* are actually present, not how
+// many note chunks there are. Otherwise a chunk holding 10 vocab words but counted as
+// "1 note" only gets ~2 questions, forcing the model to cram several words into one.
+const VOCAB_LINE_PATTERN = /.+:.+:.+/;
+
+function countQuizWorthyFacts(notes: NoteInput[]): number {
+  let vocabLines = 0;
+  for (const note of notes) {
+    for (const line of note.text.split("\n")) {
+      if (VOCAB_LINE_PATTERN.test(line.trim())) vocabLines++;
+    }
+  }
+  return vocabLines > 0 ? vocabLines : notes.length * 2;
+}
+
 function buildPrompt(notes: NoteInput[]): string {
   const notesBlock = notes.map((n) => `[note id: ${n.id}] (topic: ${n.topic})\n${n.text}`).join("\n\n");
-  return `You are a study-quiz generator. Using ONLY the student's own notes below, write ${Math.min(
-    notes.length * 2,
-    8
-  )} quiz questions that test recall and understanding of this material.
+  const questionCount = Math.min(countQuizWorthyFacts(notes), 15);
+  return `You are a study-quiz generator. Using ONLY the student's own notes below, write ${questionCount}
+quiz questions that test recall and understanding of this material.
+
+Each question must test exactly ONE fact or vocabulary term — never bundle multiple words or
+facts into a single question or answer, even if that means writing more, shorter questions.
+If the notes are a vocabulary list ("original : pronunciation : translation" lines), write one
+question per vocabulary term (e.g. asking for its pronunciation, its translation, or to use it
+in context) rather than grouping several terms into one question.
 
 For each question, include the "id" of the single note it's most based on, as "sourceNoteId".
 Do not invent facts that aren't supported by the notes. Mix recall questions with at least one

@@ -31,9 +31,11 @@ export async function recognizeTextFromImage(imageUri: string, mimeType: string)
 }
 
 /**
- * Prompts the user to take a photo or pick one from their library, then
- * runs OCR on it (Gemini, with on-device ML Kit fallback — see
- * recognizeTextFromImage). Returns null if the user cancels.
+ * Prompts the user to take a photo or pick one or more from their library,
+ * then runs OCR on each (Gemini, with on-device ML Kit fallback — see
+ * recognizeTextFromImage), joining the results. The camera only captures
+ * one photo per launch, so multi-select only applies to the library.
+ * Returns null if the user cancels.
  */
 export async function captureAndRecognizeText(source: "camera" | "library"): Promise<string | null> {
   const permission =
@@ -48,12 +50,14 @@ export async function captureAndRecognizeText(source: "camera" | "library"): Pro
   const result =
     source === "camera"
       ? await ImagePicker.launchCameraAsync({ quality: 1 })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 1 });
+      : await ImagePicker.launchImageLibraryAsync({ quality: 1, allowsMultipleSelection: true });
 
   if (result.canceled) return null;
 
-  const asset = result.assets[0];
-  return recognizeTextFromImage(asset.uri, asset.mimeType ?? "image/jpeg");
+  const texts = await Promise.all(
+    result.assets.map((asset) => recognizeTextFromImage(asset.uri, asset.mimeType ?? "image/jpeg"))
+  );
+  return texts.filter((t) => t.trim().length > 0).join("\n");
 }
 
 /**
