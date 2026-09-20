@@ -4,6 +4,9 @@ A weekly-notes revision app: capture what you learned in class each week, and ge
 AI-generated quizzes that target what you're due to review — built to show a real
 RAG (retrieval-augmented generation) pipeline, not just a chatbot wrapper.
 
+**📱 [Download the Android APK](https://github.com/GandhiVir/ReviseMe/releases/latest)** —
+sideloadable, no Play Store account needed. See the release notes for install steps.
+
 ## Architecture
 
 Storage stays on-device; both embeddings and quiz generation run through
