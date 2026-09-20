@@ -42,7 +42,13 @@ on-device-storage property of the app is untouched by its existence.
 ReviseMe/
   app/     Expo React Native app (this is what ships to the App/Play Store)
   worker/  Cloudflare Worker proxy that holds the Gemini API key
+  web/     Standalone Next.js web app (separate deployment, own DB) — see web/README.md
 ```
+
+There's also a [web version](web) — same RAG pipeline, rebuilt on Next.js
+with Netlify DB (Postgres) instead of on-device SQLite. It's a fully
+separate deployment with its own storage, not a shared backend with the
+mobile app; see `web/README.md` for its own setup and architecture notes.
 
 ## Getting started
 
