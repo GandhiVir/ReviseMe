@@ -109,104 +109,108 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-2xl bg-surface p-5 shadow-sm">
-        <div className="flex gap-4">
-          <div className="w-20">
-            <label className="mb-1 block text-xs font-semibold text-text-muted">Week</label>
-            <input
-              type="number"
-              value={weekNumber}
-              onChange={(e) => setWeekNumber(e.target.value)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-semibold text-text-muted">Topic</label>
-            <input
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder='e.g. "verb conjugation"'
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
-            />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+      <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-border/60">
+          <div className="flex gap-4">
+            <div className="w-24">
+              <label className="mb-1 block text-xs font-semibold text-text-muted">Week</label>
+              <input
+                type="number"
+                value={weekNumber}
+                onChange={(e) => setWeekNumber(e.target.value)}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-semibold text-text-muted">Topic</label>
+              <input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder='e.g. "verb conjugation"'
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="rounded-2xl bg-surface p-5 shadow-sm">
-        <label className="mb-1 block text-xs font-semibold text-text-muted">Notes</label>
-        <textarea
-          value={rawText}
-          onChange={(e) => {
-            setRawText(e.target.value);
-            setSourceType("typed");
-          }}
-          placeholder="Type, scan a photo, upload a PDF, or record a voice note..."
-          className="h-40 w-full resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
-        />
-      </div>
-
-      <div className="rounded-2xl bg-surface p-5 shadow-sm">
-        <p className="mb-3 text-xs font-bold text-text">Capture</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => imageInputRef.current?.click()}
-            disabled={scanning}
-            className="rounded-xl bg-primary-soft py-3 text-xs font-semibold text-primary-dark disabled:opacity-50"
-          >
-            {scanning ? "..." : "📷 Upload photo"}
-          </button>
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
+        <div className="rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-border/60">
+          <label className="mb-1 block text-xs font-semibold text-text-muted">Notes</label>
+          <textarea
+            value={rawText}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file, file.type || "image/jpeg", false);
-              e.target.value = "";
+              setRawText(e.target.value);
+              setSourceType("typed");
             }}
+            placeholder="Type, scan a photo, upload a PDF, or record a voice note..."
+            className="h-64 w-full resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-soft lg:h-80"
           />
-
-          <button
-            onClick={() => pdfInputRef.current?.click()}
-            disabled={scanning}
-            className="rounded-xl bg-primary-soft py-3 text-xs font-semibold text-primary-dark disabled:opacity-50"
-          >
-            {scanning ? "..." : "📄 Upload PDF"}
-          </button>
-          <input
-            ref={pdfInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file, "application/pdf", true);
-              e.target.value = "";
-            }}
-          />
-
-          <button
-            onClick={handleToggleRecording}
-            className={`col-span-2 rounded-xl py-3 text-xs font-semibold ${
-              recording ? "bg-danger text-white" : "bg-primary-soft text-primary-dark"
-            }`}
-          >
-            {recording ? "⏹ Stop recording" : "🎤 Record voice"}
-          </button>
         </div>
+
+        {error && <p className="text-sm text-danger">{error}</p>}
       </div>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      <div className="flex flex-col gap-4 lg:sticky lg:top-24">
+        <div className="rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-border/60">
+          <p className="mb-3 text-xs font-bold text-text">Capture</p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              disabled={scanning}
+              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/20 disabled:opacity-50"
+            >
+              {scanning ? "…" : "📷 Upload photo"}
+            </button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file, file.type || "image/jpeg", false);
+                e.target.value = "";
+              }}
+            />
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="rounded-xl bg-gradient-to-r from-[#9333ea] to-accent py-4 font-bold text-white shadow-sm disabled:opacity-50"
-      >
-        {saving ? "Saving..." : "✓ Save note"}
-      </button>
+            <button
+              onClick={() => pdfInputRef.current?.click()}
+              disabled={scanning}
+              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/20 disabled:opacity-50"
+            >
+              {scanning ? "…" : "📄 Upload PDF"}
+            </button>
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file, "application/pdf", true);
+                e.target.value = "";
+              }}
+            />
+
+            <button
+              onClick={handleToggleRecording}
+              className={`rounded-xl py-3 text-sm font-semibold transition ${
+                recording ? "bg-danger text-white" : "bg-primary-soft text-primary-dark hover:bg-primary/20"
+              }`}
+            >
+              {recording ? "⏹ Stop recording" : "🎤 Record voice"}
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-xl bg-gradient-to-r from-[#9333ea] to-accent py-4 font-bold text-white shadow-sm transition hover:shadow-md disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "✓ Save note"}
+        </button>
+      </div>
     </div>
   );
 }

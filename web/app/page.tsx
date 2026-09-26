@@ -12,7 +12,10 @@ export default async function HomePage() {
 
   return (
     <div>
-      <p className="mb-6 text-sm text-text-muted">Pick a subject to add notes or start a revision quiz.</p>
+      <div className="mb-8">
+        <h1 className="text-2xl font-extrabold text-text sm:text-3xl">Your subjects</h1>
+        <p className="mt-1 text-sm text-text-muted">Pick a subject to add notes or start a revision quiz.</p>
+      </div>
       <SubjectList initialSubjects={rows.map((s) => ({ id: s.id, name: s.name }))} />
     </div>
   );

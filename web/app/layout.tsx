@@ -10,12 +10,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <header className="bg-gradient-to-br from-primary to-[#9333ea] px-6 py-5 text-white shadow-md">
-          <a href="/" className="text-xl font-extrabold tracking-tight">
-            ReviseMe
-          </a>
+        <header className="sticky top-0 z-10 bg-gradient-to-r from-primary to-[#9333ea] shadow-md">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+            <a href="/" className="text-xl font-extrabold tracking-tight text-white">
+              ReviseMe
+            </a>
+            <p className="hidden text-sm text-white/80 sm:block">Weekly notes → AI revision quizzes</p>
+          </div>
         </header>
-        <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
       </body>
     </html>
   );
