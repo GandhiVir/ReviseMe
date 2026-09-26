@@ -27,16 +27,26 @@ each has its own storage and its own copy of the Gemini/Groq calling code.
 
 ## Setup
 
+This repo is a monorepo (`app/`, `worker/`, `web/` all in one git repo), so
+`netlify.toml` lives at the **repo root**, with `base = "web"` telling
+Netlify to scope builds/deploys to this folder. That means: **`netlify`**
+CLI commands run from the **repo root**; **`npm`** commands run from `web/`
+(that's where `package.json` actually is).
+
 ### 1. Provision Netlify DB
+
+From the repo root:
 
 ```bash
 npm install -g netlify-cli   # if you don't already have it
 netlify login
-netlify init                  # link this folder to a Netlify site
+netlify init                  # link the repo to a Netlify site (detects netlify.toml + base="web")
 netlify db init                # provisions a Neon Postgres DB, sets NETLIFY_DATABASE_URL
 ```
 
 ### 2. Set the AI provider secrets
+
+Still from the repo root:
 
 ```bash
 netlify env:set GEMINI_API_KEY "your-key"
@@ -45,13 +55,18 @@ netlify env:set GROQ_API_KEY "your-key"    # optional, OCR backup only
 
 ### 3. Push the schema
 
+From `web/`:
+
 ```bash
+cd web
 npm install
 netlify env:get NETLIFY_DATABASE_URL       # copy this into a local .env as NETLIFY_DATABASE_URL
 npm run db:push
 ```
 
 ### 4. Run locally
+
+From the repo root:
 
 ```bash
 netlify dev
@@ -63,9 +78,11 @@ needed above.
 
 ### 5. Deploy
 
+From the repo root:
+
 ```bash
 netlify deploy --prod
 ```
 
-Netlify auto-detects Next.js and handles the build/runtime wiring — no
-`publish` directory to configure.
+Netlify auto-detects Next.js (via `base`) and handles the build/runtime
+wiring — no `publish` directory to configure.

@@ -1,3 +1,6 @@
 *.apk
 *.aab
 *.ipa
+
+# Local Netlify folder
+.netlify
