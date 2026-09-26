@@ -61,16 +61,18 @@ netlify env:set GEMINI_API_KEY "your-key"
 netlify env:set GROQ_API_KEY "your-key"    # optional, OCR backup only
 ```
 
-### 3. Generate a migration from the schema
+### 3. Generate and apply a migration from the schema
 
 ```bash
 npm run db:generate
+netlify database migrations apply
 ```
 
-This writes SQL into `netlify/database/migrations/` — commit these files.
-There's no manual `db:push` against a connection string here: migrations
-get applied automatically, both to `netlify dev`'s local Postgres and to
-the real database on deploy.
+`db:generate` writes SQL into `netlify/database/migrations/` — commit these
+files. `migrations apply` actually runs it against `netlify dev`'s local
+Postgres (this doesn't happen automatically just by having `netlify dev`
+running — skip it and every query fails with `relation "subjects" does not
+exist`). Run `migrations apply` again any time you add a new migration.
 
 ### 4. Run locally
 
