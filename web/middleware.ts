@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { randomUUID } from "crypto";
 import { COOKIE_NAME, ONE_YEAR_SECONDS } from "@/lib/session";
 
 // Middleware is one of the few places Next.js allows setting cookies (the
@@ -12,7 +11,10 @@ export function middleware(request: NextRequest) {
   if (request.cookies.get(COOKIE_NAME)) return NextResponse.next();
 
   const response = NextResponse.next();
-  response.cookies.set(COOKIE_NAME, randomUUID(), {
+  // crypto.randomUUID() is the Web Crypto API (a global, not Node's
+  // "crypto" module) — the one that's actually available in the Edge
+  // Runtime middleware runs on by default.
+  response.cookies.set(COOKIE_NAME, crypto.randomUUID(), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
