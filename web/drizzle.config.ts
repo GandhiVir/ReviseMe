@@ -3,8 +3,8 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   dialect: "postgresql",
   schema: "./lib/db/schema.ts",
-  out: "./netlify/database/migrations",
+  out: "./drizzle/migrations",
   dbCredentials: {
-    url: process.env.NETLIFY_DATABASE_URL!,
+    url: process.env.DATABASE_URL!,
   },
 });
