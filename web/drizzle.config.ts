@@ -1,10 +1,10 @@
-import type { Config } from "drizzle-kit";
+import { defineConfig } from "drizzle-kit";
 
-export default {
-  schema: "./lib/db/schema.ts",
-  out: "./drizzle",
+export default defineConfig({
   dialect: "postgresql",
+  schema: "./lib/db/schema.ts",
+  out: "./netlify/database/migrations",
   dbCredentials: {
     url: process.env.NETLIFY_DATABASE_URL!,
   },
-} satisfies Config;
+});
