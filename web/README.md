@@ -15,6 +15,11 @@ each has its own storage and its own copy of the Gemini/Groq calling code.
   SQLite. Embeddings are stored as a `jsonb` array and compared with
   brute-force cosine similarity in JS at query time (same approach as
   mobile) — no `pgvector` dependency, fine at personal-notes scale.
+  `lib/db/client.ts` uses `@netlify/database`'s `getDatabase()` helper
+  rather than reading `NETLIFY_DATABASE_URL` directly — that helper returns
+  a different driver depending on context (a plain `pg.Pool` against
+  `netlify dev`'s local Postgres, or Neon's HTTP client in production), and
+  `neon()`'s HTTP driver alone can't talk to a local Postgres at all.
 - **Identity**: no login system. Each browser gets a random id in an
   `httpOnly` cookie (`lib/session.ts`), and every row is scoped to it — the
   minimum needed so two visitors to the public site don't see each other's
@@ -45,7 +50,8 @@ cd web
 npm install -g netlify-cli   # if you don't already have it
 netlify login
 netlify init                  # link this folder to a Netlify site
-netlify db init                # provisions a Neon Postgres DB, sets NETLIFY_DATABASE_URL
+netlify db init                # sets up Drizzle + @netlify/database, no sample data
+npm install
 ```
 
 ### 2. Set the AI provider secrets
@@ -55,13 +61,16 @@ netlify env:set GEMINI_API_KEY "your-key"
 netlify env:set GROQ_API_KEY "your-key"    # optional, OCR backup only
 ```
 
-### 3. Push the schema
+### 3. Generate a migration from the schema
 
 ```bash
-npm install
-netlify env:get NETLIFY_DATABASE_URL       # copy this into a local .env as NETLIFY_DATABASE_URL
-npm run db:push
+npm run db:generate
 ```
+
+This writes SQL into `netlify/database/migrations/` — commit these files.
+There's no manual `db:push` against a connection string here: migrations
+get applied automatically, both to `netlify dev`'s local Postgres and to
+the real database on deploy.
 
 ### 4. Run locally
 
@@ -69,9 +78,10 @@ npm run db:push
 netlify dev
 ```
 
-`netlify dev` injects the real env vars (including `NETLIFY_DATABASE_URL`)
-automatically — no need to hand-maintain a `.env` beyond what `db:push`
-needed above.
+This starts a local Postgres automatically and applies pending migrations
+to it — no `.env` needed for the database at all (see the `getDatabase()`
+note above). Open the printed URL and try the golden path: add a subject,
+add a note, run a quiz.
 
 ### 5. Deploy
 
@@ -79,5 +89,6 @@ needed above.
 netlify deploy --prod
 ```
 
-Netlify auto-detects Next.js and handles the build/runtime wiring — no
-`publish` directory to configure.
+The first deploy is what actually provisions the real Neon database in
+production (`netlify database status` will say "not enabled" until this
+happens) and applies the same migrations to it.
