@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { auth, signOut } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "ReviseMe",
   description: "Weekly notes, AI-generated revision quizzes.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+
   return (
     <html lang="en">
       <body className="min-h-screen">
@@ -15,7 +18,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/" className="text-xl font-extrabold tracking-tight text-white">
               ReviseMe
             </a>
-            <p className="hidden text-sm text-white/80 sm:block">Weekly notes → AI revision quizzes</p>
+            {session?.user && (
+              <div className="flex items-center gap-3">
+                <span className="hidden text-sm text-white/80 sm:block">{session.user.email}</span>
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/login" });
+                  }}
+                >
+                  <button
+                    type="submit"
+                    className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-white/25"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </header>
         <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>

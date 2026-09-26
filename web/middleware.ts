@@ -1,28 +1,17 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { COOKIE_NAME, ONE_YEAR_SECONDS } from "@/lib/session";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-// Middleware is one of the few places Next.js allows setting cookies (the
-// others are Server Actions and Route Handlers — a plain Server Component's
-// render is read-only). Ensuring the anonymous id exists here, before any
-// page or API route runs, means lib/session.ts's getUserId() never needs to
-// write a cookie itself — it can just read one that's already guaranteed
-// to be there.
-export function middleware(request: NextRequest) {
-  if (request.cookies.get(COOKIE_NAME)) return NextResponse.next();
+// Replaces the old anonymous-cookie middleware entirely now that there's
+// real login — unauthenticated visitors get redirected to /login instead
+// of silently getting a random per-browser id.
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/api/auth");
 
-  const response = NextResponse.next();
-  // crypto.randomUUID() is the Web Crypto API (a global, not Node's
-  // "crypto" module) — the one that's actually available in the Edge
-  // Runtime middleware runs on by default.
-  response.cookies.set(COOKIE_NAME, crypto.randomUUID(), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: ONE_YEAR_SECONDS,
-    path: "/",
-  });
-  return response;
-}
+  if (!isLoggedIn && !isAuthRoute) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  }
+});
 
 export const config = {
   matcher: "/((?!_next/static|_next/image|favicon.ico).*)",
