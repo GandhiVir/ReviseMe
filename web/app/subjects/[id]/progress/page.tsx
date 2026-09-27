@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { subjects, topicMastery } from "@/lib/db/schema";
 import { getUserId } from "@/lib/session";
 import { isDue } from "@/lib/spacedRepetition";
+import Mascot from "../../../_components/Mascot";
 import PageHeader from "../../../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,16 @@ export default async function ProgressPage({ params }: { params: Promise<{ id: s
 
       {rows.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
-          <p className="text-4xl">📊</p>
+          <Mascot mood="encouraging" className="mb-2 h-16 w-16" />
           <p className="text-text-muted">No quiz history yet for this subject.</p>
         </div>
       ) : (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm ring-1 ring-border/60">
+          <Mascot mood="encouraging" className="h-12 w-12 shrink-0" />
+          <p className="text-sm text-text-muted">Keep it up — every review strengthens your recall.</p>
+        </div>
+      )}
+      {rows.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((m) => {
             const due = isDue({ nextDueDate: m.nextDueDate });
