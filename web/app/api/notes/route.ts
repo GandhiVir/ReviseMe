@@ -17,42 +17,47 @@ interface IngestBody {
 }
 
 export async function POST(request: Request) {
-  const userId = await getUserId();
-  const body = (await request.json()) as IngestBody;
+  try {
+    const userId = await getUserId();
+    const body = (await request.json()) as IngestBody;
 
-  if (!body.subjectId || !body.rawText?.trim() || !body.topic?.trim()) {
-    return NextResponse.json({ error: "subjectId, rawText, and topic are required" }, { status: 400 });
-  }
+    if (!body.subjectId || !body.rawText?.trim() || !body.topic?.trim()) {
+      return NextResponse.json({ error: "subjectId, rawText, and topic are required" }, { status: 400 });
+    }
 
-  if (!(await assertSubjectOwnership(body.subjectId, userId))) {
-    return NextResponse.json({ error: "Subject not found" }, { status: 404 });
-  }
+    if (!(await assertSubjectOwnership(body.subjectId, userId))) {
+      return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+    }
 
-  const [note] = await db
-    .insert(weeklyNotes)
-    .values({
+    const [note] = await db
+      .insert(weeklyNotes)
+      .values({
+        id: randomUUID(),
+        subjectId: body.subjectId,
+        weekNumber: body.weekNumber || 1,
+        rawText: body.rawText,
+        sourceType: body.sourceType,
+      })
+      .returning();
+
+    const texts = chunkText(body.rawText);
+    const embeddings = await embedTexts(texts);
+
+    const chunkRows = texts.map((text, i) => ({
       id: randomUUID(),
+      noteId: note.id,
       subjectId: body.subjectId,
+      text,
+      embedding: embeddings[i],
+      topic: body.topic.trim(),
       weekNumber: body.weekNumber || 1,
-      rawText: body.rawText,
-      sourceType: body.sourceType,
-    })
-    .returning();
+    }));
 
-  const texts = chunkText(body.rawText);
-  const embeddings = await embedTexts(texts);
+    await db.insert(chunksTable).values(chunkRows);
 
-  const chunkRows = texts.map((text, i) => ({
-    id: randomUUID(),
-    noteId: note.id,
-    subjectId: body.subjectId,
-    text,
-    embedding: embeddings[i],
-    topic: body.topic.trim(),
-    weekNumber: body.weekNumber || 1,
-  }));
-
-  await db.insert(chunksTable).values(chunkRows);
-
-  return NextResponse.json(note);
+    return NextResponse.json(note);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Saving the note failed: ${message}` }, { status: 502 });
+  }
 }

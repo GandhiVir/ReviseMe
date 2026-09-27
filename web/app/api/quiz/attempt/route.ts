@@ -18,45 +18,50 @@ interface AttemptBody {
 }
 
 export async function POST(request: Request) {
-  const userId = await getUserId();
-  const body = (await request.json()) as AttemptBody;
+  try {
+    const userId = await getUserId();
+    const body = (await request.json()) as AttemptBody;
 
-  if (!body.subjectId || !body.topic || !body.question) {
-    return NextResponse.json({ error: "subjectId, topic, and question are required" }, { status: 400 });
-  }
-  if (!(await assertSubjectOwnership(body.subjectId, userId))) {
-    return NextResponse.json({ error: "Subject not found" }, { status: 404 });
-  }
+    if (!body.subjectId || !body.topic || !body.question) {
+      return NextResponse.json({ error: "subjectId, topic, and question are required" }, { status: 400 });
+    }
+    if (!(await assertSubjectOwnership(body.subjectId, userId))) {
+      return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+    }
 
-  await db.insert(quizAttempts).values({
-    id: randomUUID(),
-    subjectId: body.subjectId,
-    question: body.question,
-    correctAnswer: body.correctAnswer,
-    sourceChunkIds: body.sourceChunkIds,
-    userAnswer: body.userAnswer,
-    wasCorrect: body.wasCorrect,
-  });
-
-  const [existing] = await db
-    .select()
-    .from(topicMastery)
-    .where(and(eq(topicMastery.subjectId, body.subjectId), eq(topicMastery.topic, body.topic)))
-    .limit(1);
-
-  const current = existing
-    ? { correctStreak: existing.correctStreak, lastReviewed: existing.lastReviewed, nextDueDate: existing.nextDueDate, easeFactor: existing.easeFactor }
-    : newMastery();
-
-  const next = scheduleNextReview(current, body.wasCorrect);
-
-  await db
-    .insert(topicMastery)
-    .values({ subjectId: body.subjectId, topic: body.topic, ...next })
-    .onConflictDoUpdate({
-      target: [topicMastery.subjectId, topicMastery.topic],
-      set: next,
+    await db.insert(quizAttempts).values({
+      id: randomUUID(),
+      subjectId: body.subjectId,
+      question: body.question,
+      correctAnswer: body.correctAnswer,
+      sourceChunkIds: body.sourceChunkIds,
+      userAnswer: body.userAnswer,
+      wasCorrect: body.wasCorrect,
     });
 
-  return NextResponse.json({ ok: true });
+    const [existing] = await db
+      .select()
+      .from(topicMastery)
+      .where(and(eq(topicMastery.subjectId, body.subjectId), eq(topicMastery.topic, body.topic)))
+      .limit(1);
+
+    const current = existing
+      ? { correctStreak: existing.correctStreak, lastReviewed: existing.lastReviewed, nextDueDate: existing.nextDueDate, easeFactor: existing.easeFactor }
+      : newMastery();
+
+    const next = scheduleNextReview(current, body.wasCorrect);
+
+    await db
+      .insert(topicMastery)
+      .values({ subjectId: body.subjectId, topic: body.topic, ...next })
+      .onConflictDoUpdate({
+        target: [topicMastery.subjectId, topicMastery.topic],
+        set: next,
+      });
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Recording the attempt failed: ${message}` }, { status: 502 });
+  }
 }

@@ -17,6 +17,11 @@ function apiKey(): string {
   return key;
 }
 
+// Retries on 429 (rate limited) and 503 (Gemini overloaded — a real,
+// semi-frequent "This model is currently experiencing high demand" error
+// seen multiple times across this project, not a hypothetical edge case).
+const RETRYABLE_STATUSES = new Set([429, 503]);
+
 async function callGeminiWithRetry(body: unknown, url: string = GEMINI_URL, maxAttempts = 3): Promise<Response> {
   let lastResponse: Response | null = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -25,7 +30,7 @@ async function callGeminiWithRetry(body: unknown, url: string = GEMINI_URL, maxA
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (response.status !== 429) return response;
+    if (!RETRYABLE_STATUSES.has(response.status)) return response;
     lastResponse = response;
     await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
   }
@@ -101,7 +106,7 @@ export async function extractVocabularyViaGemini(base64Data: string, mimeType: s
   return formatVocab(parsed.vocabulary);
 }
 
-interface NoteInput {
+export interface NoteInput {
   id: string;
   text: string;
   topic: string;
@@ -141,7 +146,7 @@ function countQuizWorthyFacts(notes: NoteInput[]): number {
   return vocabLines > 0 ? vocabLines : notes.length * 2;
 }
 
-function buildQuizPrompt(notes: NoteInput[]): string {
+export function buildQuizPrompt(notes: NoteInput[]): string {
   const notesBlock = notes.map((n) => `[note id: ${n.id}] (topic: ${n.topic})\n${n.text}`).join("\n\n");
   const questionCount = Math.min(countQuizWorthyFacts(notes), 15);
   return `You are a study-quiz generator. Using ONLY the student's own notes below, write ${questionCount}
