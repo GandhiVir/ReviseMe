@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import CatMascot from "./_components/CatMascot";
 import { auth, signOut } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -15,7 +16,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <header className="sticky top-0 z-10 bg-gradient-to-r from-primary to-[#9333ea] shadow-md">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-            <a href="/" className="text-xl font-extrabold tracking-tight text-white">
+            <a href="/" className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-white">
+              <CatMascot className="h-9 w-9" />
               ReviseMe
             </a>
             {session?.user && (

@@ -1,0 +1,29 @@
+export default function CatMascot({ className = "h-10 w-10" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M20 38 L28 14 L42 36 Z" fill="#f472b6" />
+      <path d="M80 38 L72 14 L58 36 Z" fill="#f472b6" />
+      <path d="M24 34 L29 20 L37 33 Z" fill="#fbcfe8" />
+      <path d="M76 34 L71 20 L63 33 Z" fill="#fbcfe8" />
+      <circle cx="50" cy="58" r="34" fill="#f472b6" />
+      <path d="M8 52 Q22 46 30 54" stroke="#c026d3" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+      <path d="M8 62 Q22 60 31 62" stroke="#c026d3" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+      <path d="M92 52 Q78 46 70 54" stroke="#c026d3" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+      <path d="M92 62 Q78 60 69 62" stroke="#c026d3" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+      <circle cx="37" cy="58" r="5.5" fill="#1e1b2e" />
+      <circle cx="63" cy="58" r="5.5" fill="#1e1b2e" />
+      <circle cx="35.3" cy="56" r="1.8" fill="#ffffff" />
+      <circle cx="61.3" cy="56" r="1.8" fill="#ffffff" />
+      <circle cx="37" cy="58" r="9" fill="none" stroke="#1e1b2e" strokeWidth="2" />
+      <circle cx="63" cy="58" r="9" fill="none" stroke="#1e1b2e" strokeWidth="2" />
+      <path d="M46 58 L54 58" stroke="#1e1b2e" strokeWidth="2" />
+      <path d="M50 68 L47 71 L50 72 L53 71 Z" fill="#c026d3" />
+      <path d="M50 72 Q50 76 44 76" stroke="#1e1b2e" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M50 72 Q50 76 56 76" stroke="#1e1b2e" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <circle cx="26" cy="66" r="4.5" fill="#fb7185" fillOpacity="0.5" />
+      <circle cx="74" cy="66" r="4.5" fill="#fb7185" fillOpacity="0.5" />
+      <rect x="27" y="20" width="46" height="9" rx="4.5" fill="#6d28d9" />
+      <rect x="45.5" y="11" width="9" height="13" rx="3.5" fill="#6d28d9" />
+    </svg>
+  );
+}
