@@ -3,3 +3,7 @@
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
