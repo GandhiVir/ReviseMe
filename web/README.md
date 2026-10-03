@@ -7,6 +7,10 @@ Cloudflare Worker — there's no separate proxy layer here, since these
 routes already run server-side, so `GEMINI_API_KEY`/`GROQ_API_KEY` never
 reach the browser.
 
+**🌐 Live: [revisemequick.netlify.app](https://revisemequick.netlify.app)**
+
+![ReviseMe web demo](../docs/demo.gif)
+
 This is a **separate deployment** from the mobile app, not a shared backend —
 each has its own storage and its own copy of the Gemini/Groq calling code.
 
@@ -76,7 +80,12 @@ netlify env:set GROQ_API_KEY "your-key"    # optional, OCR backup only
 netlify env:set AUTH_GOOGLE_ID "your-google-client-id"
 netlify env:set AUTH_GOOGLE_SECRET "your-google-client-secret"
 netlify env:set AUTH_SECRET "$(openssl rand -base64 33)"
+netlify env:set AUTH_URL "https://<your-site>.netlify.app" --context production
 ```
+
+`AUTH_URL` pins the origin Auth.js uses to build the Google callback URL.
+Without it, behind Netlify's proxy the host can vary between the sign-in and
+callback requests, and Google rejects the login with `redirect_uri_mismatch`.
 
 Also create a local `.env` (see `.env.example`) with the same values, so
 `netlify dev` and the `db:generate`/`db:migrate` scripts below can reach
@@ -110,3 +119,19 @@ Google, then try the golden path: add a subject, add a note, run a quiz.
 ```bash
 netlify deploy --prod
 ```
+
+## Local demo mode (for screenshots)
+
+To explore the app, or retake the README screenshots, without a Google
+account, there's a demo login that exists **only under `next dev` with
+`DEMO_MODE=1`** (`lib/auth.ts` checks both; it's never active in a build, and
+`/api/demo-login` returns 404 otherwise).
+
+```bash
+node --env-file=.env scripts/demo-data.mjs seed    # fake Spanish subject under user "demo-local"
+DEMO_MODE=1 npm run dev                            # then open /api/demo-login
+node --env-file=.env scripts/demo-data.mjs clean   # remove the demo rows when done
+```
+
+Note the seed script writes to whatever database `DATABASE_URL` points at —
+use a separate Neon branch if that's your production database.

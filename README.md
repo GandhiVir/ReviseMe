@@ -4,8 +4,23 @@ A weekly-notes revision app: capture what you learned in class each week, and ge
 AI-generated quizzes that target what you're due to review — built to show a real
 RAG (retrieval-augmented generation) pipeline, not just a chatbot wrapper.
 
+**🌐 [Try the live web app](https://revisemequick.netlify.app)** — sign in with Google, add a subject and some notes, then get quizzed on them.
+
 **📱 [Download the Android APK](https://github.com/GandhiVir/ReviseMe/releases/latest)** —
 sideloadable, no Play Store account needed. See the release notes for install steps.
+
+## Demo
+
+![ReviseMe web demo: subjects, vocab list, progress, and a quiz with sources](docs/demo.gif)
+
+| Quiz with cited source | Vocab list | Progress |
+|---|---|---|
+| ![Quiz answer with the source note it was generated from](docs/screenshots/quiz-answer-source.png) | ![Searchable vocabulary table](docs/screenshots/vocab.png) | ![Per-topic mastery and review schedule](docs/screenshots/progress.png) |
+
+Every quiz question is generated from retrieved notes, and the answer reveal
+shows the exact note chunk it came from. The mascot reacts to how you're doing —
+the feisty cat for misses, the encouraging dog for streaks. Dark mode is the
+default; there's a light theme too ([screenshot](docs/screenshots/home-light.png)).
 
 ## Architecture
 
@@ -45,10 +60,11 @@ ReviseMe/
   web/     Standalone Next.js web app (separate deployment, own DB) — see web/README.md
 ```
 
-There's also a [web version](web) — same RAG pipeline, rebuilt on Next.js
-with Netlify DB (Postgres) instead of on-device SQLite. It's a fully
-separate deployment with its own storage, not a shared backend with the
-mobile app; see `web/README.md` for its own setup and architecture notes.
+There's also a [web version](web) ([live](https://revisemequick.netlify.app)) —
+same RAG pipeline, rebuilt on Next.js with a free Neon Postgres database
+(via Drizzle ORM) instead of on-device SQLite, and Google sign-in via Auth.js.
+It's a fully separate deployment with its own storage, not a shared backend
+with the mobile app; see `web/README.md` for its own setup and architecture notes.
 
 ## Getting started
 
