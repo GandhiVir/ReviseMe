@@ -5,7 +5,6 @@ import { auth, signIn } from "@/lib/auth";
 export default async function LoginPage() {
   const session = await auth();
   if (session?.user?.id) redirect("/");
-  if (session) redirect("/api/reset-session");
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">

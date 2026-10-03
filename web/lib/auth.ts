@@ -7,7 +7,17 @@ import Google from "next-auth/providers/google";
 export const DEMO_ENABLED = process.env.NODE_ENV === "development" && process.env.DEMO_MODE === "1";
 export const DEMO_USER_ID = "demo-local";
 
+// A custom session cookie name (instead of Auth.js's default `authjs.session-token`) so sessions issued
+// before user ids were stable are simply never read, rather than lingering as id-less "stale" sessions.
+const useSecureCookies = process.env.NODE_ENV === "production";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  cookies: {
+    sessionToken: {
+      name: `${useSecureCookies ? "__Secure-" : ""}reviseme.session-token`,
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: useSecureCookies },
+    },
+  },
   providers: [
     Google,
     ...(DEMO_ENABLED
