@@ -30,6 +30,7 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
   const [sourceType, setSourceType] = useState<SourceType>("typed");
   const [saving, setSaving] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState("");
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,24 +38,43 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  async function handleFile(file: File, mimeType: string, isPdf: boolean) {
+  async function handleFiles(files: File[], isPdf: boolean) {
+    if (files.length === 0) return;
     setScanning(true);
     setError(null);
+    const failed: string[] = [];
+    let lastError = "";
     try {
-      const base64 = await fileToBase64(file);
-      const res = await fetch("/api/extract-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: base64, mimeType }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Extraction failed");
-      const { text } = await res.json();
-      setRawText((prev) => appendText(prev, text));
-      setSourceType(isPdf ? "pdf" : "ocr");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // One at a time, in order: keeps the notes in upload order and stays inside Gemini's rate limits.
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setScanProgress(files.length > 1 ? `${i + 1} of ${files.length}` : "");
+        try {
+          const base64 = await fileToBase64(file);
+          const res = await fetch("/api/extract-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: base64, mimeType: isPdf ? "application/pdf" : file.type || "image/jpeg" }),
+          });
+          if (!res.ok) throw new Error((await res.json()).error ?? "Extraction failed");
+          const { text } = await res.json();
+          setRawText((prev) => appendText(prev, text));
+          setSourceType(isPdf ? "pdf" : "ocr");
+        } catch (e) {
+          failed.push(file.name);
+          lastError = e instanceof Error ? e.message : String(e);
+        }
+      }
+      if (failed.length > 0) {
+        setError(
+          files.length === 1
+            ? lastError
+            : `Couldn't read ${failed.length} of ${files.length} files (${failed.join(", ")}): ${lastError}`
+        );
+      }
     } finally {
       setScanning(false);
+      setScanProgress("");
     }
   }
 
@@ -159,17 +179,18 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
               disabled={scanning}
               className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-on-soft transition hover:bg-primary/20 disabled:opacity-50"
             >
-              {scanning ? "…" : "📷 Upload photo"}
+              {scanning ? `Reading… ${scanProgress}` : "📷 Upload photos"}
             </button>
             <input
               ref={imageInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFile(file, file.type || "image/jpeg", false);
+                const files = Array.from(e.target.files ?? []);
                 e.target.value = "";
+                handleFiles(files, false);
               }}
             />
 
@@ -178,17 +199,18 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
               disabled={scanning}
               className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-on-soft transition hover:bg-primary/20 disabled:opacity-50"
             >
-              {scanning ? "…" : "📄 Upload PDF"}
+              {scanning ? `Reading… ${scanProgress}` : "📄 Upload PDFs"}
             </button>
             <input
               ref={pdfInputRef}
               type="file"
               accept="application/pdf"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFile(file, "application/pdf", true);
+                const files = Array.from(e.target.files ?? []);
                 e.target.value = "";
+                handleFiles(files, true);
               }}
             />
 

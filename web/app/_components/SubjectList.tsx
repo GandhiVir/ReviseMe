@@ -87,7 +87,7 @@ export default function SubjectList({ initialSubjects }: { initialSubjects: Subj
                     className="flex flex-col items-center gap-1 rounded-xl bg-primary-soft px-2 py-3 text-center text-xs font-semibold text-on-soft transition hover:bg-primary/20"
                   >
                     <span className="text-lg leading-none">📝</span>
-                    Notes
+                    Add Notes
                   </a>
                   <a
                     href={`/subjects/${s.id}/vocab`}
