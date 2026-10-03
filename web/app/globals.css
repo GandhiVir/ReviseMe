@@ -6,6 +6,7 @@
   --color-primary: #6d28d9;
   --color-primary-dark: #5b21b6;
   --color-primary-soft: #ede9fe;
+  --color-on-soft: #5b21b6;
   --color-accent: #f472b6;
   --color-text: #1e1b2e;
   --color-text-muted: #6b7280;
@@ -14,7 +15,36 @@
   --color-danger: #dc2626;
 }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #14111f;
+  --color-surface: #1e1a2e;
+  --color-primary: #8b5cf6;
+  --color-primary-dark: #7c3aed;
+  --color-primary-soft: #2b2247;
+  --color-on-soft: #ddd6fe;
+  --color-text: #ede9fe;
+  --color-text-muted: #a5a1b8;
+  --color-border: #3a3354;
+  --color-danger: #ef4444;
+  --color-green-100: #12301f;
+  --color-red-100: #3b1519;
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  input,
+  textarea {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-muted);
+  }
 }

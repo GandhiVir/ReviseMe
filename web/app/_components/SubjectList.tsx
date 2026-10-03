@@ -81,16 +81,22 @@ export default function SubjectList({ initialSubjects }: { initialSubjects: Subj
                 >
                   🧠 Quiz me
                 </a>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <a
                     href={`/subjects/${s.id}/notes`}
-                    className="flex-1 rounded-xl bg-primary-soft px-4 py-2.5 text-center text-sm font-semibold text-primary-dark transition hover:bg-primary/20"
+                    className="rounded-xl bg-primary-soft px-2 py-2.5 text-center text-sm font-semibold text-on-soft transition hover:bg-primary/20"
                   >
-                    📝 Add notes
+                    📝 Notes
+                  </a>
+                  <a
+                    href={`/subjects/${s.id}/vocab`}
+                    className="rounded-xl bg-primary-soft px-2 py-2.5 text-center text-sm font-semibold text-on-soft transition hover:bg-primary/20"
+                  >
+                    📖 Vocab
                   </a>
                   <a
                     href={`/subjects/${s.id}/progress`}
-                    className="flex-1 rounded-xl bg-primary-soft px-4 py-2.5 text-center text-sm font-semibold text-primary-dark transition hover:bg-primary/20"
+                    className="rounded-xl bg-primary-soft px-2 py-2.5 text-center text-sm font-semibold text-on-soft transition hover:bg-primary/20"
                   >
                     📊 Progress
                   </a>

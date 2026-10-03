@@ -157,7 +157,7 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
             <button
               onClick={() => imageInputRef.current?.click()}
               disabled={scanning}
-              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/20 disabled:opacity-50"
+              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-on-soft transition hover:bg-primary/20 disabled:opacity-50"
             >
               {scanning ? "…" : "📷 Upload photo"}
             </button>
@@ -176,7 +176,7 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
             <button
               onClick={() => pdfInputRef.current?.click()}
               disabled={scanning}
-              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-primary-dark transition hover:bg-primary/20 disabled:opacity-50"
+              className="rounded-xl bg-primary-soft py-3 text-sm font-semibold text-on-soft transition hover:bg-primary/20 disabled:opacity-50"
             >
               {scanning ? "…" : "📄 Upload PDF"}
             </button>
@@ -195,7 +195,7 @@ export default function NoteEntryForm({ subjectId }: { subjectId: string }) {
             <button
               onClick={handleToggleRecording}
               className={`rounded-xl py-3 text-sm font-semibold transition ${
-                recording ? "bg-danger text-white" : "bg-primary-soft text-primary-dark hover:bg-primary/20"
+                recording ? "bg-danger text-white" : "bg-primary-soft text-on-soft hover:bg-primary/20"
               }`}
             >
               {recording ? "⏹ Stop recording" : "🎤 Record voice"}

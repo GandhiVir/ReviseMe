@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import type { Chunk, QuizMode, QuizQuestion } from "@/lib/types";
+import Mascot from "../../../_components/Mascot";
+
+const CORRECT_LINES = ["Nice one!", "Look at you go.", "Exactly right.", "Keep that streak alive!"];
+const WRONG_LINES = ["Wrong. Again. You'll get it.", "Nope. Read the source and fix it.", "Close, but no treat for you.", "Mistakes are free. Repeating them isn't."];
+function pick(lines: string[]): string {
+  return lines[Math.floor(Math.random() * lines.length)];
+}
 
 function normalize(s: string): string {
   return s
@@ -109,6 +116,8 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
   const [answer, setAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [autoHint, setAutoHint] = useState<boolean | null>(null);
+  const [score, setScore] = useState(0);
+  const [reaction, setReaction] = useState<{ correct: boolean; line: string } | null>(null);
 
   async function handleSelectMode(selected: QuizMode) {
     setMode(selected);
@@ -140,6 +149,8 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
     setRevealed(false);
     setAutoHint(null);
     setError(null);
+    setScore(0);
+    setReaction(null);
   }
 
   async function handleGrade(wasCorrect: boolean) {
@@ -164,6 +175,8 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
     setAnswer("");
     setRevealed(false);
     setAutoHint(null);
+    if (wasCorrect) setScore((n) => n + 1);
+    setReaction({ correct: wasCorrect, line: pick(wasCorrect ? CORRECT_LINES : WRONG_LINES) });
     setCurrent((c) => c + 1);
   }
 
@@ -207,10 +220,16 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
   }
 
   if (current >= questions.length) {
+    const doingWell = score / questions.length >= 0.6;
     return (
       <div className="mt-16 flex flex-col items-center gap-4 text-center">
-        <p className="text-4xl">🏆</p>
-        <p className="text-xl font-bold">Nice work — quiz complete!</p>
+        <Mascot mood={doingWell ? "encouraging" : "feisty"} className="h-24 w-24" />
+        <p className="text-xl font-bold">
+          {doingWell ? "Nice work — quiz complete!" : "Quiz complete. We're not done with you yet."}
+        </p>
+        <p className="text-text-muted">
+          You got {score} of {questions.length} right.
+        </p>
         <button
           onClick={resetToModePicker}
           className="rounded-xl bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-dark"
@@ -224,6 +243,7 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
   const q = questions[current];
   const progressPct = ((current + (revealed ? 0.5 : 0)) / questions.length) * 100;
   const hasAnswer = answer.trim().length > 0;
+  const sourceChunk = sourceChunks.find((c) => q.sourceChunkIds.includes(c.id));
 
   return (
     <div>
@@ -233,6 +253,13 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
       <p className="mb-4 mt-2 text-xs text-text-muted">
         Question {current + 1} of {questions.length}
       </p>
+
+      {reaction && !revealed && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-primary-soft px-4 py-3">
+          <Mascot mood={reaction.correct ? "encouraging" : "feisty"} className="h-12 w-12 shrink-0" />
+          <p className="text-sm font-semibold text-on-soft">{reaction.line}</p>
+        </div>
+      )}
 
       <div className="rounded-2xl bg-surface p-6 shadow-sm ring-1 ring-border/60">
         <p className="mb-4 text-lg font-bold">{q.question}</p>
@@ -272,7 +299,15 @@ export default function QuizClient({ subjectId }: { subjectId: string }) {
                 {autoHint ? "✓ Looks right — compare with the answer below" : "? Doesn't clearly match — check below"}
               </p>
             )}
-            <div className="mb-4 rounded-lg bg-primary-soft p-3 text-sm font-semibold text-primary-dark">💡 {q.answer}</div>
+            <div className="mb-3 rounded-lg bg-primary-soft p-3 text-sm font-semibold text-on-soft">💡 {q.answer}</div>
+            {sourceChunk && (
+              <details className="mb-4 rounded-lg border border-border px-3 py-2 text-sm">
+                <summary className="cursor-pointer text-xs font-semibold text-text-muted">
+                  📎 Source — {sourceChunk.topic}, week {sourceChunk.weekNumber}
+                </summary>
+                <p className="mt-2 whitespace-pre-wrap text-text-muted">{sourceChunk.text}</p>
+              </details>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => handleGrade(false)}
