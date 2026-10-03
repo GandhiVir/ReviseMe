@@ -5,8 +5,9 @@ import { auth } from "@/lib/auth";
 // real login — unauthenticated visitors get redirected to /login instead
 // of silently getting a random per-browser id.
 export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/api/auth");
+  // Sessions issued before userId existed have no stable id; treat them as signed out so they re-login.
+  const isLoggedIn = !!req.auth?.user?.id;
+  const isAuthRoute = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/api/auth") || req.nextUrl.pathname.startsWith("/api/demo-login");
 
   if (!isLoggedIn && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
